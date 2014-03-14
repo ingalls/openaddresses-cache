@@ -18,6 +18,7 @@
   "license": "PD",
   "dependencies": {
     "minimist": "0.0.8",
-    "progress": "~1.1.4"
+    "progress": "~1.1.4",
+    "openaddresses-download": "0.0.1"
   }
 }
