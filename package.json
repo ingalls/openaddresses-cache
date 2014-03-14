@@ -1,0 +1,23 @@
+{
+  "name": "openaddresses-cache",
+  "version": "0.0.1",
+  "description": "Create cache of OpenAddress data",
+  "main": "index.js",
+  "keywords": [
+    "openaddresses",
+    "addresses"
+  ],
+  "bin": {
+    "openaddresses-cache": "cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openaddresses/openaddress-cache.git"
+  },
+  "author": "",
+  "license": "PD",
+  "dependencies": {
+    "minimist": "0.0.8",
+    "progress": "~1.1.4"
+  }
+}
