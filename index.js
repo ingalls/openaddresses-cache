@@ -9,7 +9,8 @@ var download = require('openaddresses-download'),
 
 var sourceDir = argv._[0],
     cacheDir = argv._[1],
-    connectors = download.connectors;
+    connectors = download.connectors,
+    output = "";
 
 if (!sourceDir || !cacheDir) {
     throw new Error('usage: openaddress-cache path-to-sources path-to-cache');
@@ -41,10 +42,11 @@ _.each(sources, function(source){
 
   if (source.compression == undefined)
     source.compression = "";
+  output = cacheDir + source.replace(".json","") + source.compression;
 
   connectors[type](parsed, function(err, stream) {
       if (!argv.silent) showProgress(stream, type);
-      stream.pipe(fs.createWriteStream(cacheDir + source.replace(".json","") + source.compression));
+      stream.pipe(fs.createWriteStream(output));
   });
 });
 
@@ -74,5 +76,12 @@ function showProgress(stream, type) {
         if (bar) bar.tick(chunk.length);
     }).on('end', function() {
         if (bar) console.log('\n');
+        hash(output);
+    });
+}
+
+function hash(output){
+    fs.readFile(output, function(err, buf){
+      console.log(MD5(buf));
     });
 }
