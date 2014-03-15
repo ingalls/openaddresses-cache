@@ -9,8 +9,12 @@ var download = require('openaddresses-download'),
 
 var sourceDir = argv._[0],
     cacheDir = argv._[1],
-    connectors = download.connectors,
-    output = "";
+    connectors = download.connectors;
+
+var output = "",
+    parsed = "",
+    source = "",
+    sourceIndex = 0;
 
 if (!sourceDir || !cacheDir) {
     throw new Error('usage: openaddress-cache path-to-sources path-to-cache');
@@ -25,10 +29,22 @@ for (var i = 0; i < sources.length; i++){
     i--;
   }
 }
+downloadSource(sourceIndex);
 
 //Download Each Source
-_.each(sources, function(source){
-  var parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
+function downloadSource(index){
+  if (index < sources.length)
+    var source = sources[index];
+  else {
+    console.log("Complete!");
+    process.exit();
+  }
+  
+  this.source = sourceDir + source;
+  
+  console.log(source);
+  
+  parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
   if (!parsed.data) {
       throw new Error('no data included in source');
@@ -49,7 +65,8 @@ _.each(sources, function(source){
       if (!argv.silent) showProgress(stream, type);
       stream.pipe(fs.createWriteStream(output));
   });
-});
+}
+
 
 function showProgress(stream, type) {
     var bar;
@@ -58,7 +75,7 @@ function showProgress(stream, type) {
             var len = parseInt(res.headers['content-length'], 10);
             bar = new ProgressBar('  downloading [:bar] :percent :etas', {
                 complete: '=',
-                incomplete: ' ',
+                incomplete: '-',
                 width: 20,
                 total: len
             });
@@ -67,7 +84,7 @@ function showProgress(stream, type) {
         stream.on('size', function(len) {
             bar = new ProgressBar('  downloading [:bar] :percent :etas', {
                 complete: '=',
-                incomplete: ' ',
+                incomplete: '-',
                 width: 20,
                 total: len
             });
@@ -77,12 +94,31 @@ function showProgress(stream, type) {
         if (bar) bar.tick(chunk.length);
     }).on('end', function() {
         if (bar) console.log('\n');
-        hash(output);
+        checkHash(output);
     });
 }
 
-function hash(output){
+function checkHash(output){
     fs.readFile(output, function(err, buf){
-      console.log(MD5(buf));
+      var md5Hash = MD5(buf);
+        
+      if (parsed.fingerprint != md5Hash)
+        updateManifest(md5Hash);
+      else {
+        fs.unlinkSync(output);
+        downloadSource(sourceIndex++);
+      }
     });
+}
+
+function updateManifest(md5Hash){
+  console.log("Updated Manifest: " + this.source);
+  
+  parsed.fingerprint = md5Hash;
+
+  fs.writeFile(this.source, JSON.stringify(parsed, null, 4), function(err) {
+      if(err) console.log(err);
+  });
+  
+  downloadSource(sourceIndex++);
 }
