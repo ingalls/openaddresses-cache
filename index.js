@@ -4,7 +4,8 @@ var download = require('openaddresses-download'),
     argv = require('minimist')(process.argv.slice(2)),
     _ = require('underscore'),
     fs = require('fs'),
-    ProgressBar = require('progress');
+    ProgressBar = require('progress'),
+    MD5 = require('MD5');
 
 var sourceDir = argv._[0],
     cacheDir = argv._[1],
@@ -24,6 +25,7 @@ for (var i = 0; i < sources.length; i++){
   }
 }
 
+//Download Each Source
 _.each(sources, function(source){
   var parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
@@ -37,9 +39,12 @@ _.each(sources, function(source){
       throw new Error('no connector found');
   }
 
+  if (source.compression == undefined)
+    source.compression = "";
+
   connectors[type](parsed, function(err, stream) {
       if (!argv.silent) showProgress(stream, type);
-      stream.pipe(fs.createWriteStream(cacheDir + source.replace(".json","")));
+      stream.pipe(fs.createWriteStream(cacheDir + source.replace(".json","") + source.compression));
   });
 });
 
