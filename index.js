@@ -40,9 +40,10 @@ _.each(sources, function(source){
       throw new Error('no connector found');
   }
 
-  if (source.compression == undefined)
-    source.compression = "";
-  output = cacheDir + source.replace(".json","") + source.compression;
+  if (parsed.compression != undefined)
+    output = cacheDir + source.replace(".json","") + "." + parsed.compression;
+  else 
+    output = cacheDir + source.replace(".json","");
 
   connectors[type](parsed, function(err, stream) {
       if (!argv.silent) showProgress(stream, type);
