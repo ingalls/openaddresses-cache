@@ -108,7 +108,7 @@ function checkHash(output){
         updateManifest(md5Hash);
       else {
         fs.unlinkSync(output);
-        downloadSource(sourceIndex++);
+        downloadSource(++sourceIndex);
       }
     });
 }
@@ -121,5 +121,28 @@ function updateManifest(md5Hash){
   
   console.log("Updated Manifest: " + this.source);
 
-  downloadSource(sourceIndex++);
+  updateCache();
+}
+
+function updateCache(){
+  console.log("Updating s3 with " + this.source);
+  
+  var s3 = new AWS.S3();
+  fs.readFile(output, function (err, data) {
+    if (err)
+      throw new Error('Could not find data to upload'); 
+    
+    var buffer = new Buffer(data, 'binary');
+
+    var s3 = new AWS.S3();
+    s3.client.putObject({
+      Bucket: 'openaddresses',
+      Key: output,
+      Body: buffer
+    }, function (response) {
+      console.log('Successfully uploaded package.');
+      console.log(response);
+      downloadSource(++sourceIndex);
+    });
+  });
 }
