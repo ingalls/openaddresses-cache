@@ -5,7 +5,9 @@ var download = require('openaddresses-download'),
     _ = require('underscore'),
     fs = require('fs'),
     ProgressBar = require('progress'),
-    MD5 = require('MD5');
+    MD5 = require('MD5'),
+    AWS = require('aws-sdk'),
+    time = require('moment');
 
 var sourceDir = argv._[0],
     cacheDir = argv._[1],
@@ -112,13 +114,12 @@ function checkHash(output){
 }
 
 function updateManifest(md5Hash){
-  console.log("Updated Manifest: " + this.source);
-  
   parsed.fingerprint = md5Hash;
+  parsed.version = time().format('YYYYMMDD');
 
-  fs.writeFile(this.source, JSON.stringify(parsed, null, 4), function(err) {
-      if(err) console.log(err);
-  });
+  fs.writeFileSync(this.source, JSON.stringify(parsed, null, 4));
   
+  console.log("Updated Manifest: " + this.source);
+
   downloadSource(sourceIndex++);
 }
