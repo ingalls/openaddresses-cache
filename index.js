@@ -16,6 +16,7 @@ var sourceDir = argv._[0],
 var output = "",
     parsed = "",
     source = "",
+    sourceName = "",
     sourceIndex = 0;
 
 if (!sourceDir || !cacheDir) {
@@ -42,9 +43,8 @@ function downloadSource(index){
     process.exit();
   }
   
+  this.sourceName = sources[index];
   this.source = sourceDir + source;
-  
-  console.log(source);
   
   parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
@@ -119,13 +119,13 @@ function updateManifest(md5Hash){
 
   fs.writeFileSync(this.source, JSON.stringify(parsed, null, 4));
   
-  console.log("Updated Manifest: " + this.source);
+  console.log("  Updated Manifest: " + this.source + " with fingerprint & version");
 
   updateCache();
 }
 
 function updateCache(){
-  console.log("Updating s3 with " + this.source);
+  console.log("  Updating s3 with " + this.source);
   
   var s3 = new AWS.S3();
   fs.readFile(output, function (err, data) {
@@ -135,13 +135,14 @@ function updateCache(){
     var buffer = new Buffer(data, 'binary');
 
     var s3 = new AWS.S3();
+    
     s3.client.putObject({
       Bucket: 'openaddresses',
-      Key: output,
-      Body: buffer
+      Key: this.sourceName.replace(".json", ".zip"),
+      Body: buffer,
+      ACL: 'public-read'
     }, function (response) {
-      console.log('Successfully uploaded package.');
-      console.log(response);
+      console.log('  Successfully uploaded package.');
       downloadSource(++sourceIndex);
     });
   });
