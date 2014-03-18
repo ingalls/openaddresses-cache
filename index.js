@@ -105,7 +105,7 @@ function checkHash(output){
       var md5Hash = MD5(buf);
         
       if (parsed.fingerprint != md5Hash)
-        updateManifest(md5Hash);
+        updateCache(md5Hash);
       else {
         fs.unlinkSync(output);
         downloadSource(++sourceIndex);
@@ -113,18 +113,16 @@ function checkHash(output){
     });
 }
 
-function updateManifest(md5Hash){
-  parsed.fingerprint = md5Hash;
-  parsed.version = time().format('YYYYMMDD');
-
+function updateManifest(){
   fs.writeFileSync(this.source, JSON.stringify(parsed, null, 4));
-  
-  console.log("  Updated Manifest: " + this.source + " with fingerprint & version");
-
-  updateCache();
+  console.log("  Updating Manifest of " + this.source);
 }
 
-function updateCache(){
+function updateCache(md5Hash){
+  parsed.fingerprint = md5Hash;
+  parsed.version = time().format('YYYYMMDD');
+  parsed.cache = "http://s3.amazonaws.com/openaddresses/" + this.sourceName.replace(".json", ".zip");
+  
   console.log("  Updating s3 with " + this.source);
   
   var s3 = new AWS.S3();
@@ -143,7 +141,9 @@ function updateCache(){
       ACL: 'public-read'
     }, function (response) {
       console.log('  Successfully uploaded package.');
+      updateManifest();
       downloadSource(++sourceIndex);
     });
   });
+
 }
