@@ -5,7 +5,7 @@ var download = require('openaddresses-download'),
     _ = require('underscore'),
     fs = require('fs'),
     ProgressBar = require('progress'),
-    MD5 = require('MD5'),
+    crypto = require('crypto'),
     AWS = require('aws-sdk'),
     time = require('moment');
 
@@ -108,16 +108,24 @@ function showProgress(stream, type) {
 }
 
 function checkHash(output){
-    fs.readFile(output, function(err, buf){
-      var md5Hash = MD5(buf);
-        
-      if (parsed.fingerprint != md5Hash)
-        updateCache(md5Hash);
-      else {
-        fs.unlinkSync(output);
-        downloadSource(++sourceIndex);
-      }
-    });
+  
+  var fd = fs.createReadStream(output);
+  var hash = crypto.createHash('md5');
+  hash.setEncoding('hex');
+
+  fd.on('end', function() {
+    hash.end();
+    var md5Hash = hash.read();
+    
+    if (parsed.fingerprint != md5Hash)
+      updateCache(md5Hash);
+    else {
+      fs.unlinkSync(output);
+      downloadSource(++sourceIndex);
+    }
+  });
+
+  fd.pipe(hash);
 }
 
 function updateManifest(){
