@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
+//NPM Dependancies
 var download = require('openaddresses-download'),
     argv = require('minimist')(process.argv.slice(2)),
     fs = require('fs'),
     ProgressBar = require('progress'),
     crypto = require('crypto'),
     AWS = require('aws-sdk'),
-    time = require('moment');
-
-var sourceDir = argv._[0],
-    cacheDir = argv._[1],
+    time = require('moment'),
     connectors = download.connectors;
+
+//Command Line Args
+var sourceDir = argv._[0],
+    cacheDir = argv._[1];
+    
 
 var output = "",
     parsed = "",
@@ -22,25 +25,29 @@ if (!sourceDir || !cacheDir) {
     throw new Error('usage: openaddress-cache <path-to-sources> <path-to-cache>');
 }
 
+//Setup list of sources
 var sources = fs.readdirSync(sourceDir);
 
-//Only Keep json
-for (var i = 0; i < sources.length; i++){
-  if (sources[i].indexOf('.json') == -1){
+//Only retain *.json
+for (var i = 0; i < sources.length; i++) {
+  if (sources[i].indexOf('.json') == -1) {
     sources.splice(i, 1);
     i--;
   }
 }
+
+//Begin Downloading Sources
 downloadSource(sourceIndex);
 
 //Download Each Source
-function downloadSource(index){
-  if (index < sources.length)
-    var source = sources[index];
-  else {
+function downloadSource(index) {
+  
+  if (index >= sources.length) {
     console.log("Complete!");
     process.exit();
   }
+  
+  var source = sources[index];
   
   this.sourceName = sources[index];
   this.source = sourceDir + source;
@@ -50,7 +57,7 @@ function downloadSource(index){
   if (!parsed.data | parsed.skip == true) {
       console.log("Skipping: " + this.source);
       downloadSource(++sourceIndex);
-  } else if (parsed.data.search(/\/MapServer\/\d+/) !== -1 | parsed.data.search(/\/FeatureServer\/\d+$/) !== -1){
+  } else if (parsed.data.search(/\/MapServer\/\d+/) !== -1 | parsed.data.search(/\/FeatureServer\/\d+$/) !== -1) {
       //TODO Remove once ESRI is supported
       console.log("Skipping ESRI Source: " + this.source);
       downloadSource(++sourceIndex);
@@ -106,7 +113,7 @@ function showProgress(stream, type) {
     });
 }
 
-function checkHash(output){
+function checkHash(output) {
   
   var fd = fs.createReadStream(output);
   var hash = crypto.createHash('md5');
@@ -127,12 +134,12 @@ function checkHash(output){
   fd.pipe(hash);
 }
 
-function updateManifest(){
+function updateManifest() {
   fs.writeFileSync(this.source, JSON.stringify(parsed, null, 4));
   console.log("  Updating Manifest of " + this.source);
 }
 
-function updateCache(md5Hash){
+function updateCache(md5Hash) {
   parsed.fingerprint = md5Hash;
   parsed.version = time().format('YYYYMMDD');
   parsed.cache = "http://s3.amazonaws.com/openaddresses/" + this.sourceName.replace(".json", ".zip");
