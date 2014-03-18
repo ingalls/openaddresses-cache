@@ -20,7 +20,7 @@ var output = "",
     sourceIndex = 0;
 
 if (!sourceDir || !cacheDir) {
-    throw new Error('usage: openaddress-cache path-to-sources path-to-cache');
+    throw new Error('usage: openaddress-cache <path-to-sources> <path-to-cache>');
 }
 
 var sources = fs.readdirSync(sourceDir);
@@ -47,6 +47,9 @@ function downloadSource(index){
   this.source = sourceDir + source;
   
   parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
+
+  if (parsed.skip == true)
+    downloadSource(++sourceIndex);
 
   if (!parsed.data) {
       throw new Error('no data included in source');
