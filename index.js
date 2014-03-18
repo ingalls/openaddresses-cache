@@ -48,28 +48,32 @@ function downloadSource(index){
   
   parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
-  if (parsed.skip == true)
-    downloadSource(++sourceIndex);
+  if (!parsed.data | parsed.skip == true) {
+      console.log("Skipping: " + this.source);
+      downloadSource(++sourceIndex);
+  } else if (parsed.data.search(/\/MapServer\/\d+/) !== -1 | parsed.data.search(/\/FeatureServer\/\d+$/) !== -1){
+      //TODO Remove once ESRI is supported
+      console.log("Skipping ESRI Source: " + this.source);
+      downloadSource(++sourceIndex);
+  } else {
+    console.log("Downloading: " + this.source);
 
-  if (!parsed.data) {
-      throw new Error('no data included in source');
+    var type = connectors.byAddress(parsed.data);
+
+    if (!type) {
+        throw new Error('no connector found');
+    }
+
+    if (parsed.compression != undefined)
+      output = cacheDir + source.replace(".json","") + "." + parsed.compression;
+    else 
+      output = cacheDir + source.replace(".json","");
+
+    connectors[type](parsed, function(err, stream) {
+        if (!argv.silent) showProgress(stream, type);
+        stream.pipe(fs.createWriteStream(output));
+    });
   }
-
-  var type = connectors.byAddress(parsed.data);
-
-  if (!type) {
-      throw new Error('no connector found');
-  }
-
-  if (parsed.compression != undefined)
-    output = cacheDir + source.replace(".json","") + "." + parsed.compression;
-  else 
-    output = cacheDir + source.replace(".json","");
-
-  connectors[type](parsed, function(err, stream) {
-      if (!argv.silent) showProgress(stream, type);
-      stream.pipe(fs.createWriteStream(output));
-  });
 }
 
 
