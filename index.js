@@ -2,7 +2,6 @@
 
 var download = require('openaddresses-download'),
     argv = require('minimist')(process.argv.slice(2)),
-    _ = require('underscore'),
     fs = require('fs'),
     ProgressBar = require('progress'),
     crypto = require('crypto'),
