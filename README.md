@@ -11,4 +11,4 @@ Where
 
 `<source directory>` contains a complete or partial list of sources from the openaddress project. (Note, if skip = true, then the cache will skip updating these files.
 
-`<working directory>` the directory where the files will be downloaded to and then checked against the s3 cache for updats.
+`<working directory>` is an *empty* directory where the files will be downloaded to and then checked against the s3 cache for updats.
