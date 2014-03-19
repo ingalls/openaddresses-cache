@@ -22,7 +22,7 @@ var output = "",
     sourceIndex = 0;
 
 if (!sourceDir || !cacheDir) {
-    throw new Error('usage: openaddress-cache <path-to-sources> <path-to-cache>');
+    throw new Error('usage: openaddresses-cache <path-to-sources> <path-to-cache>');
 }
 
 //Setup list of sources
