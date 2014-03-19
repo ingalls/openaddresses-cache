@@ -8,7 +8,7 @@
     "addresses"
   ],
   "bin": {
-    "openaddresses-cache": "cli.js"
+    "openaddresses-cache": "index.js"
   },
   "repository": {
     "type": "git",
