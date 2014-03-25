@@ -62,23 +62,31 @@ function downloadSource(index) {
         console.log("Skipping ESRI Source: " + this.source);
         downloadSource(++sourceIndex);
     } else {
-      console.log("Downloading: " + this.source);
+        console.log("Downloading: " + this.source);
 
-      var type = connectors.byAddress(parsed.data);
+        var type = connectors.byAddress(parsed.data);
 
-      if (!type) {
-          throw new Error('no connector found');
-      }
+        if (!type) {
+            throw new Error('no connector found');
+        }
 
-      if (parsed.compression !== undefined)
-          output = cacheDir + source.replace(".json","") + "." + parsed.compression;
-      else 
-          output = cacheDir + source.replace(".json","");
+        if (parsed.compression !== undefined)
+            output = cacheDir + source.replace(".json","") + "." + parsed.compression;
+        else 
+            output = cacheDir + source.replace(".json","");
 
-      connectors[type](parsed, function(err, stream) {
-          if (!argv.silent) showProgress(stream, type);
-          stream.pipe(fs.createWriteStream(output));
-      });
+        connectors[type](parsed, function(err, stream) {
+
+            if (!argv.silent) showProgress(stream, type);
+
+            var write = fs.createWriteStream(output);
+
+            write.on('close', function() {
+                checkHash(output);
+            });
+
+            stream.pipe(write);
+        });
     }
 }
 
@@ -97,19 +105,23 @@ function showProgress(stream, type) {
         });
     } else if (type == 'ftp') {
         stream.on('size', function(len) {
-            bar = new ProgressBar('  downloading [:bar] :percent :etas', {
-                complete: '=',
-                incomplete: '-',
-                width: 20,
-                total: len
-            });
+
+            if (!len)
+                console.log("No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
+            else {
+                bar = new ProgressBar('  downloading [:bar] :percent :etas', {
+                    complete: '=',
+                    incomplete: '-',
+                    width: 20,
+                    total: len
+                });
+            }
         });
     }
     stream.on('data', function(chunk) {
         if (bar) bar.tick(chunk.length);
     }).on('end', function() {
-        if (bar) console.log('\n');
-        checkHash(output);
+
     });
 }
 
