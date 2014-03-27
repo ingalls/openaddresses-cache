@@ -57,7 +57,7 @@ function downloadSource(index) {
     if (!parsed.data || parsed.skip === true) {
         console.log("Skipping: " + this.source);
         downloadSource(++sourceIndex);
-    } else if (parsed.data.search(/\/MapServer\/\d+/) !== -1 || parsed.data.search(/\/FeatureServer\/\d+$/) !== -1) {
+    } else if (parsed.type == "ESRI") {
         //TODO Remove once ESRI is supported
         console.log("Skipping ESRI Source: " + this.source);
         downloadSource(++sourceIndex);
