@@ -8,6 +8,7 @@ var download = require('openaddresses-download'),
     crypto = require('crypto'),
     AWS = require('aws-sdk'),
     time = require('moment'),
+    esri = require('esri-dump'),
     connectors = download.connectors;
 
 //Command Line Args
@@ -44,7 +45,7 @@ function downloadSource(index) {
   
     if (index >= sources.length) {
         console.log("Complete!");
-        process.exit();
+        process.exit(0);
     }
     
     var source = sources[index];
