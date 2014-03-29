@@ -8,7 +8,6 @@ var download = require('openaddresses-download'),
     crypto = require('crypto'),
     AWS = require('aws-sdk'),
     time = require('moment'),
-    esri = require('esri-dump'),
     connectors = download.connectors;
 
 //Command Line Args
