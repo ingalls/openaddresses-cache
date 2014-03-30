@@ -16,10 +16,12 @@ var sourceDir = argv._[0],
     
 
 var output = "",
+    outputName = "",
     parsed = "",
     source = "",
     sourceName = "",
-    sourceIndex = 0;
+    sourceIndex = 0,
+    retry = 0;
 
 if (!sourceDir || !cacheDir) {
     throw new Error('usage: openaddresses-cache <path-to-sources> <path-to-cache>');
@@ -51,42 +53,85 @@ function downloadSource(index) {
     
     this.sourceName = sources[index];
     this.source = sourceDir + source;
+
+    console.log("---" + this.sourceName + "---");
     
     parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
     if (!parsed.data || parsed.skip === true) {
-        console.log("Skipping: " + this.source);
+        console.log("   Skipping: Skip=true");
+        downloadSource(++sourceIndex);
+    } else if (!parsed.type) {
+        console.log("  Skipping: No Type");
         downloadSource(++sourceIndex);
     } else if (parsed.type == "ESRI") {
-        //TODO Remove once ESRI is supported
-        console.log("Skipping ESRI Source: " + this.source);
-        downloadSource(++sourceIndex);
-    } else {
-        console.log("Downloading: " + this.source);
+        console.log("  Scraping ESRI Source");
 
-        var type = connectors.byAddress(parsed.data);
+        output = cacheDir + source;
+        outputName = source;
 
-        if (!type) {
-            throw new Error('no connector found');
-        }
-
-        if (parsed.compression !== undefined)
-            output = cacheDir + source.replace(".json","") + "." + parsed.compression;
-        else 
-            output = cacheDir + source.replace(".json","");
-
-        connectors[type](parsed, function(err, stream) {
-
-            if (!argv.silent) showProgress(stream, type);
-
-            var write = fs.createWriteStream(output);
+        connectors[parsed.type](parsed, function (err, stream) {
+            var write = fs.createWriteStream(cacheDir + source);
+            var addrCount = 0;
 
             write.on('close', function() {
-                checkHash(output);
+                checkHash();
+            });
+
+            stream.on('data', function(){
+                process.stdout.write('  Downloaded: ' + ++addrCount + " addresses\r");
+            });
+
+            stream.on('error', function(){
+                if (retry != 0){
+                    retry++;
+                    console.log("  Stream Error! Retry Attempt: " + retry + "/3");
+                    downloadSource(sourceIndex);
+                } else {
+                    console.log("   Persistant Stream Error - Skipping");
+                    downloadSource(++sourceIndex);
+                }
             });
 
             stream.pipe(write);
         });
+    } else if (parsed.type == "http" || parsed.type == "ftp"){
+        if (parsed.compression) {
+            output = cacheDir + source.replace(".json","") + "." + parsed.compression;
+            outputName = source.replace(".json", "") + "." + parsed.compression;
+        } else {
+            output = cacheDir + source.replace(".json","");
+            outputName = source.replace(".json","");
+        }
+
+        connectors[parsed.type](parsed, function(err, stream) {
+
+            if (!argv.silent) showProgress(stream, parsed.type);
+
+            var write = fs.createWriteStream(output);
+
+            write.on('close', function() {
+                if (retry == 0) 
+                    checkHash();
+            });
+
+            stream.pipe(write);
+
+            stream.on('error', function(){
+                if (retry != 0){
+                    retry++;
+                    console.log("  Stream Error! Retry Attempt: " + retry + "/3");
+                    downloadSource(sourceIndex);
+                } else {
+                    console.log("   Persistant Stream Error - Skipping");
+                    retry = 0;
+                    downloadSource(++sourceIndex);
+                }
+            });
+        });
+    } else {
+        console.log("   Could not determine download type");
+        downloadSource(++sourceIndex);
     }
 }
 
@@ -125,8 +170,8 @@ function showProgress(stream, type) {
     });
 }
 
-function checkHash(output) {
-  
+function checkHash() {
+    retry = 0;
     var fd = fs.createReadStream(output);
     var hash = crypto.createHash('md5');
     hash.setEncoding('hex');
@@ -169,7 +214,7 @@ function updateCache(md5Hash) {
         
         s3.client.putObject({
             Bucket: 'openaddresses',
-            Key: this.sourceName.replace(".json", ".zip"),
+            Key: outputName,
             Body: buffer,
             ACL: 'public-read'
         }, function (response) {
