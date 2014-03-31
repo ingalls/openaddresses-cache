@@ -13,7 +13,7 @@ var download = require('openaddresses-download'),
 //Command Line Args
 var sourceDir = argv._[0],
     cacheDir = argv._[1];
-    
+
 
 var output = "",
     outputName = "",
@@ -26,6 +26,12 @@ var output = "",
 if (!sourceDir || !cacheDir) {
     throw new Error('usage: openaddresses-cache <path-to-sources> <path-to-cache>');
 }
+
+//Catch missing /
+if (sourceDir.substr(sourceDir.length-1) != "/")
+    sourceDir = sourceDir + "/";
+if (cacheDir.substr(cacheDir.length-1) != "/")
+    cacheDir = cacheDir + "/";
 
 //Setup list of sources
 var sources = fs.readdirSync(sourceDir);
@@ -211,7 +217,7 @@ function updateCache(md5Hash) {
     parsed.version = time().format('YYYYMMDD');
     parsed.cache = "http://s3.amazonaws.com/openaddresses/" + this.sourceName.replace(".json", ".zip");
     
-    console.log("   Updating s3 with " + this.uploadName);
+    console.log("   Updating s3 with " + outputName);
     
     var s3 = new AWS.S3();
     fs.readFile(output, function (err, data) {
