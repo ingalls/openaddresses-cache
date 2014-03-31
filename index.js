@@ -71,29 +71,34 @@ function downloadSource(index) {
         outputName = source;
 
         connectors[parsed.type](parsed, function (err, stream) {
-            var write = fs.createWriteStream(cacheDir + source);
-            var addrCount = 0;
+            if (err) {
+                console.log("   Unable to Stream Data - Skipping");
+                downloadSource(++sourceIndex);
+            } else {
+                var write = fs.createWriteStream(cacheDir + source);
+                var addrCount = 0;
 
-            write.on('close', function() {
-                checkHash();
-            });
+                write.on('close', function() {
+                    checkHash();
+                });
 
-            stream.on('data', function(){
-                process.stdout.write('  Downloaded: ' + ++addrCount + " addresses\r");
-            });
+                stream.on('data', function(){
+                    process.stdout.write('  Downloaded: ' + ++addrCount + " addresses\r");
+                });
 
-            stream.on('error', function(){
-                if (retry != 0){
-                    retry++;
-                    console.log("   Stream Error! Retry Attempt: " + retry + "/3");
-                    downloadSource(sourceIndex);
-                } else {
-                    console.log("   Persistant Stream Error - Skipping");
-                    downloadSource(++sourceIndex);
-                }
-            });
+                stream.on('error', function(){
+                    if (retry != 0){
+                        retry++;
+                        console.log("   Stream Error! Retry Attempt: " + retry + "/3");
+                        downloadSource(sourceIndex);
+                    } else {
+                        console.log("   Persistant Stream Error - Skipping");
+                        downloadSource(++sourceIndex);
+                    }
+                });
 
-            stream.pipe(write);
+                stream.pipe(write);
+            }
         });
     } else if (parsed.type == "http" || parsed.type == "ftp"){
         if (parsed.compression) {
@@ -106,35 +111,40 @@ function downloadSource(index) {
 
         connectors[parsed.type](parsed, function(err, stream) {
 
-            if (!argv.silent) showProgress(stream, parsed.type);
+            if (err) {
+                console.log("   Unable to Stream Data - Skipping");
+                downloadSource(++sourceIndex);
+            } else { 
 
-            var write = fs.createWriteStream(output);
+                if (!argv.silent) showProgress(stream, parsed.type);
 
-            write.on('close', function() {
-                if (retry == 0) 
-                    checkHash();
-            });
+                var write = fs.createWriteStream(output);
 
-            stream.pipe(write);
+                write.on('close', function() {
+                    if (retry == 0) 
+                        checkHash();
+                });
 
-            stream.on('error', function(){
-                if (retry != 0){
-                    retry++;
-                    console.log("   Stream Error! Retry Attempt: " + retry + "/3");
-                    downloadSource(sourceIndex);
-                } else {
-                    console.log("   Persistant Stream Error - Skipping");
-                    retry = 0;
-                    downloadSource(++sourceIndex);
-                }
-            });
+                stream.pipe(write);
+
+                stream.on('error', function(){
+                    if (retry != 0){
+                        retry++;
+                        console.log("   Stream Error! Retry Attempt: " + retry + "/3");
+                        downloadSource(sourceIndex);
+                    } else {
+                        console.log("   Persistant Stream Error - Skipping");
+                        retry = 0;
+                        downloadSource(++sourceIndex);
+                    }
+                });
+            }
         });
     } else {
         console.log("   Could not determine download type");
         downloadSource(++sourceIndex);
     }
 }
-
 
 function showProgress(stream, type) {
     var bar;
