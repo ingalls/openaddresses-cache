@@ -59,7 +59,7 @@ function downloadSource(index) {
     parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
     if (!parsed.data || parsed.skip === true) {
-        console.log("   Skipping: Skip=true");
+        console.log("  Skipping: Skip=true");
         downloadSource(++sourceIndex);
     } else if (!parsed.type) {
         console.log("  Skipping: No Type");
@@ -88,7 +88,7 @@ function downloadSource(index) {
                     console.log("  Stream Error! Retry Attempt: " + retry + "/3");
                     downloadSource(sourceIndex);
                 } else {
-                    console.log("   Persistant Stream Error - Skipping");
+                    console.log("  Persistant Stream Error - Skipping");
                     downloadSource(++sourceIndex);
                 }
             });
@@ -123,14 +123,14 @@ function downloadSource(index) {
                     console.log("  Stream Error! Retry Attempt: " + retry + "/3");
                     downloadSource(sourceIndex);
                 } else {
-                    console.log("   Persistant Stream Error - Skipping");
+                    console.log("  Persistant Stream Error - Skipping");
                     retry = 0;
                     downloadSource(++sourceIndex);
                 }
             });
         });
     } else {
-        console.log("   Could not determine download type");
+        console.log("  Could not determine download type");
         downloadSource(++sourceIndex);
     }
 }
@@ -201,7 +201,7 @@ function updateCache(md5Hash) {
     parsed.version = time().format('YYYYMMDD');
     parsed.cache = "http://s3.amazonaws.com/openaddresses/" + this.sourceName.replace(".json", ".zip");
     
-    console.log("  Updating s3 with " + this.source);
+    console.log("  Updating s3 with " + this.uploadName);
     
     var s3 = new AWS.S3();
     fs.readFile(output, function (err, data) {
