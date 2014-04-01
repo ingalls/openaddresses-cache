@@ -24,23 +24,37 @@ var output = "",
     retry = 0;
 
 if (!sourceDir || !cacheDir) {
-    throw new Error('usage: openaddresses-cache <path-to-sources> <path-to-cache>');
+    console.log('usage: openaddresses-cache <path-to-sources> <path-to-cache>');
+    console.log('       openaddresses-cache  <single source>  <path-to-cache>');
+    process.exit(0);
 }
 
-//Catch missing /
-if (sourceDir.substr(sourceDir.length-1) != "/")
-    sourceDir = sourceDir + "/";
 if (cacheDir.substr(cacheDir.length-1) != "/")
     cacheDir = cacheDir + "/";
 
-//Setup list of sources
-var sources = fs.readdirSync(sourceDir);
+var sources = [];
 
-//Only retain *.json
-for (var i = 0; i < sources.length; i++) {
-    if (sources[i].indexOf('.json') == -1) {
-        sources.splice(i, 1);
-        i--;
+if (sourceDir.indexOf(".json") != -1) {
+    var dir = sourceDir.split("/"),
+        singleSource = dir[dir.length-1];
+
+    sourceDir = sourceDir.replace(singleSource,"");
+    
+    sources.push(singleSource);
+} else {
+    //Catch missing /
+    if (sourceDir.substr(sourceDir.length-1) != "/")
+        sourceDir = sourceDir + "/";
+
+    //Setup list of sources
+    sources = fs.readdirSync(sourceDir);
+
+    //Only retain *.json
+    for (var i = 0; i < sources.length; i++) {
+        if (sources[i].indexOf('.json') == -1) {
+            sources.splice(i, 1);
+            i--;
+        }
     }
 }
 
