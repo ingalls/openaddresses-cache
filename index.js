@@ -215,7 +215,7 @@ function updateManifest() {
 function updateCache(md5Hash) {
     parsed.fingerprint = md5Hash;
     parsed.version = time().format('YYYYMMDD');
-    parsed.cache = "http://s3.amazonaws.com/openaddresses/" + this.sourceName.replace(".json", ".zip");
+    parsed.cache = "http://s3.amazonaws.com/openaddresses/" + outputName;
     
     console.log("   Updating s3 with " + outputName);
     
