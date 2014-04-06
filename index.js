@@ -103,12 +103,12 @@ function downloadSource(index) {
                 });
 
                 stream.on('data', function(){
-                    process.stdout.write('  Downloaded: ' + ++addrCount + " addresses\r");
+                    process.stdout.write('   Downloaded: ' + ++addrCount + " addresses\r");
                 });
 
                 stream.on('error', function(){
-                    if (retry != 0){
-                        retry++;
+                    if (retry < 3){
+                        ++retry;
                         console.log("   Stream Error! Retry Attempt: " + retry + "/3");
                         downloadSource(sourceIndex);
                     } else {
@@ -148,8 +148,8 @@ function downloadSource(index) {
                 stream.pipe(write);
 
                 stream.on('error', function(){
-                    if (retry != 0){
-                        retry++;
+                    if (retry < 3){
+                        ++retry;
                         console.log("   Stream Error! Retry Attempt: " + retry + "/3");
                         downloadSource(sourceIndex);
                     } else {
@@ -171,7 +171,7 @@ function showProgress(stream, type) {
     if (type == 'http') {
         stream.on('response', function(res) {
             var len = parseInt(res.headers['content-length'], 10);
-            bar = new ProgressBar('  downloading [:bar] :percent :etas', {
+            bar = new ProgressBar('   downloading [:bar] :percent :etas', {
                 complete: '=',
                 incomplete: '-',
                 width: 20,
@@ -182,9 +182,9 @@ function showProgress(stream, type) {
         stream.on('size', function(len) {
 
             if (!len)
-                console.log("No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
+                console.log("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
             else {
-                bar = new ProgressBar('  downloading [:bar] :percent :etas', {
+                bar = new ProgressBar('   downloading [:bar] :percent :etas', {
                     complete: '=',
                     incomplete: '-',
                     width: 20,
@@ -232,25 +232,30 @@ function updateCache(md5Hash) {
     parsed.cache = "http://s3.amazonaws.com/openaddresses/" + outputName;
     
     console.log("   Updating s3 with " + outputName);
-    
-    var s3 = new AWS.S3();
-    fs.readFile(output, function (err, data) {
-        if (err)
-            throw new Error('Could not find data to upload'); 
-        
-        var buffer = new Buffer(data, 'binary');
 
-        var s3 = new AWS.S3();
-        
-        s3.client.putObject({
-            Bucket: 'openaddresses',
-            Key: outputName,
-            Body: buffer,
+    var Uploader = require('s3-streaming-upload').Uploader,
+        upload = null,
+        stream = fs.createReadStream(output);
+
+    upload = new Uploader({
+        accessKey:  process.env.AWS_ACCESS_KEY_ID,
+        secretKey:  process.env.AWS_SECRET_ACCESS_KEY,
+        bucket:     "openaddresses",
+        objectName: outputName,
+        stream:     stream,
+        objectParams: {
             ACL: 'public-read'
-        }, function (response) {
-            console.log('  Successfully uploaded package.');
-            updateManifest();
-            downloadSource(++sourceIndex);
-        });
+        }
+    });
+
+    upload.on('completed', function (err, res) {
+        console.log('   Successfully uploaded package.');
+        updateManifest();
+        downloadSource(++sourceIndex);
+    });
+
+    upload.on('failed', function (err) {
+        console.log('upload failed with error', err);
+        downloadSource(++sourceIndex);
     });
 }
