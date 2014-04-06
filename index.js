@@ -171,25 +171,30 @@ function showProgress(stream, type) {
     if (type == 'http') {
         stream.on('response', function(res) {
             var len = parseInt(res.headers['content-length'], 10);
-            bar = new ProgressBar('   downloading [:bar] :percent :etas', {
-                complete: '=',
-                incomplete: '-',
-                width: 20,
-                total: len
-            });
-        });
-    } else if (type == 'ftp') {
-        stream.on('size', function(len) {
 
-            if (!len)
-                console.log("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
-            else {
+            if (len) {            
                 bar = new ProgressBar('   downloading [:bar] :percent :etas', {
                     complete: '=',
                     incomplete: '-',
                     width: 20,
                     total: len
                 });
+            } else {
+                console.log("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
+            }
+        });
+    } else if (type == 'ftp') {
+        stream.on('size', function(len) {
+
+            if (len)
+                bar = new ProgressBar('   downloading [:bar] :percent :etas', {
+                    complete: '=',
+                    incomplete: '-',
+                    width: 20,
+                    total: len
+                });
+            else {
+                console.log("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
             }
         });
     }
