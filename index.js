@@ -141,7 +141,7 @@ function downloadSource(index) {
                 var write = fs.createWriteStream(output);
 
                 write.on('close', function() {
-                    if (retry == 0) 
+                    if (retry === 0) 
                         checkHash();
                 });
 
