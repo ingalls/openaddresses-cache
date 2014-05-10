@@ -6,8 +6,11 @@ by those who have access to both the access and secret keys.
 ## usage
 
     node index.js <source directory> <working directory>
+    node index.js <source> <working directory>
     
 Where
+
+`<source>` is a single source from the openaddress project.
 
 `<source directory>` contains a complete or partial list of sources from the openaddress project. (Note, if skip = true, then the cache will skip updating these files.
 
