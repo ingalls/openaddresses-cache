@@ -267,7 +267,7 @@ function updateCache(md5Hash) {
         });
 
         upload.on('completed', function (err, res) {
-            console.log('   Successfully uploaded package.');
+            winston.info('   Successfully uploaded package.');
             updateManifest();
             downloadSource(++sourceIndex);
         });
