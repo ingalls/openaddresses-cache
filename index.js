@@ -14,7 +14,6 @@ var download = require('openaddresses-download'),
 var sourceDir = argv._[0],
     cacheDir = argv._[1];
 
-
 var output = "",
     outputName = "",
     parsed = "",
@@ -234,33 +233,44 @@ function updateManifest() {
 function updateCache(md5Hash) {
     parsed.fingerprint = md5Hash;
     parsed.version = time().format('YYYYMMDD');
-    parsed.cache = "http://s3.amazonaws.com/openaddresses/" + outputName;
+    parsed.cache = "http://s3.amazonaws.com/openaddresses/" + parsed.version + "/" + outputName;
     
     console.log("   Updating s3 with " + outputName);
+    
+   var s3 = new AWS.S3.Client(),
+       versioned = 'openaddresses/' + parsed.version;
 
-    var Uploader = require('s3-streaming-upload').Uploader,
-        upload = null,
-        stream = fs.createReadStream(output);
-
-    upload = new Uploader({
-        accessKey:  process.env.AWS_ACCESS_KEY_ID,
-        secretKey:  process.env.AWS_SECRET_ACCESS_KEY,
-        bucket:     "openaddresses",
-        objectName: outputName,
-        stream:     stream,
-        objectParams: {
-            ACL: 'public-read'
+    s3.headBucket({Bucket:versioned},function(err, data) {
+        if (err) {
+            s3.createBucket({Bucket: versioned}, function(err, data) {
+                if (err) throw new Error("Could not create bucket");
+            });
         }
-    });
+        
+        var Uploader = require('s3-streaming-upload').Uploader,
+            upload = null,
+            stream = fs.createReadStream(output);
+        
+        upload = new Uploader({
+            accessKey:  process.env.AWS_ACCESS_KEY_ID,
+            secretKey:  process.env.AWS_SECRET_ACCESS_KEY,
+            bucket:     "openaddresses/" + parsed.version,
+            objectName: outputName,
+            stream:     stream,
+            objectParams: {
+                ACL: 'public-read'
+            }
+        });
 
-    upload.on('completed', function (err, res) {
-        console.log('   Successfully uploaded package.');
-        updateManifest();
-        downloadSource(++sourceIndex);
-    });
+        upload.on('completed', function (err, res) {
+            console.log('   Successfully uploaded package.');
+            updateManifest();
+            downloadSource(++sourceIndex);
+        });
 
-    upload.on('failed', function (err) {
-        console.log('upload failed with error', err);
-        downloadSource(++sourceIndex);
+        upload.on('failed', function (err) {
+            console.log('upload failed with error', err);
+            downloadSource(++sourceIndex);
+        }); 
     });
 }
