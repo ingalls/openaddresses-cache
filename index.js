@@ -10,6 +10,10 @@ var download = require('openaddresses-download'),
     time = require('moment'),
     connectors = download.connectors;
 
+var winston = require('winston');
+
+winston.add(winston.transports.File, { filename: './logger.log' });
+
 //Command Line Args
 var sourceDir = argv._[0],
     cacheDir = argv._[1];
@@ -64,7 +68,7 @@ downloadSource(sourceIndex);
 function downloadSource(index) {
   
     if (index >= sources.length) {
-        console.log("Complete!");
+        winston.info("Complete!");
         process.exit(0);
     }
     
@@ -73,25 +77,25 @@ function downloadSource(index) {
     this.sourceName = sources[index];
     this.source = sourceDir + source;
 
-    console.log("---" + this.sourceName + "---");
+    winston.info("---" + this.sourceName + "---");
     
     parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
     if (!parsed.data || parsed.skip === true) {
-        console.log("   Skipping: Skip=true");
+        winston.info("   Skipping: Skip=true");
         downloadSource(++sourceIndex);
     } else if (!parsed.type) {
-        console.log("   Skipping: No Type");
+        winston.info("   Skipping: No Type");
         downloadSource(++sourceIndex);
     } else if (parsed.type == "ESRI") {
-        console.log("   Scraping ESRI Source");
+        winston.info("   Scraping ESRI Source");
 
         output = cacheDir + source;
         outputName = source;
 
         connectors[parsed.type](parsed, function (err, stream) {
             if (err) {
-                console.log("   Unable to Stream Data - Skipping");
+                winston.info("   Unable to Stream Data - Skipping");
                 downloadSource(++sourceIndex);
             } else {
                 var write = fs.createWriteStream(cacheDir + source);
@@ -108,10 +112,10 @@ function downloadSource(index) {
                 stream.on('error', function(){
                     if (retry < 3){
                         ++retry;
-                        console.log("   Stream Error! Retry Attempt: " + retry + "/3");
+                        winston.info("   Stream Error! Retry Attempt: " + retry + "/3");
                         downloadSource(sourceIndex);
                     } else {
-                        console.log("   Persistant Stream Error - Skipping");
+                        winston.info("   Persistant Stream Error - Skipping");
                         downloadSource(++sourceIndex);
                     }
                 });
@@ -131,7 +135,7 @@ function downloadSource(index) {
         connectors[parsed.type](parsed, function(err, stream) {
 
             if (err) {
-                console.log("   Unable to Stream Data - Skipping");
+                winston.info("   Unable to Stream Data - Skipping");
                 downloadSource(++sourceIndex);
             } else { 
 
@@ -149,10 +153,10 @@ function downloadSource(index) {
                 stream.on('error', function(){
                     if (retry < 3){
                         ++retry;
-                        console.log("   Stream Error! Retry Attempt: " + retry + "/3");
+                        winston.info("   Stream Error! Retry Attempt: " + retry + "/3");
                         downloadSource(sourceIndex);
                     } else {
-                        console.log("   Persistant Stream Error - Skipping");
+                        winston.info("   Persistant Stream Error - Skipping");
                         retry = 0;
                         downloadSource(++sourceIndex);
                     }
@@ -160,7 +164,7 @@ function downloadSource(index) {
             }
         });
     } else {
-        console.log("   Could not determine download type");
+        winston.info("   Could not determine download type");
         downloadSource(++sourceIndex);
     }
 }
@@ -179,7 +183,7 @@ function showProgress(stream, type) {
                     total: len
                 });
             } else {
-                console.log("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
+                winston.info("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
             }
         });
     } else if (type == 'ftp') {
@@ -193,7 +197,7 @@ function showProgress(stream, type) {
                     total: len
                 });
             else {
-                console.log("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
+                winston.info("   No Size Given By Server - Progress Bar Disabled - Please Be Patient!");
             }
         });
     }
@@ -227,7 +231,7 @@ function checkHash() {
 
 function updateManifest() {
     fs.writeFileSync(this.source, JSON.stringify(parsed, null, 4));
-    console.log("   Updating Manifest of " + this.source);
+    winston.info("   Updating Manifest of " + this.source);
 }
 
 function updateCache(md5Hash) {
@@ -235,7 +239,7 @@ function updateCache(md5Hash) {
     parsed.version = time().format('YYYYMMDD');
     parsed.cache = "http://s3.amazonaws.com/openaddresses/" + parsed.version + "/" + outputName;
     
-    console.log("   Updating s3 with " + outputName);
+    winston.info("   Updating s3 with " + outputName);
     
    var s3 = new AWS.S3.Client(),
        versioned = 'openaddresses/' + parsed.version;
