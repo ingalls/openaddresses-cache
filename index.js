@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 //NPM Dependancies
 var download = require('openaddresses-download'),
