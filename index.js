@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 //NPM Dependancies
 var download = require('openaddresses-download'),
@@ -175,7 +174,7 @@ function showProgress(stream, type) {
         stream.on('response', function(res) {
             var len = parseInt(res.headers['content-length'], 10);
 
-            if (len) {            
+            if (len) {         
                 bar = new ProgressBar('   downloading [:bar] :percent :etas', {
                     complete: '=',
                     incomplete: '-',
