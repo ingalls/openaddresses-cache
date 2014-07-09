@@ -19,7 +19,7 @@
   "dependencies": {
     "minimist": "0.2.0",
     "progress": "1.1.7",
-    "openaddresses-download": "0.2.0",
+    "openaddresses-download": "0.3.0",
     "aws-sdk": "2.0.4",
     "moment": "~2.5.1",
     "request": "2.37.0",
