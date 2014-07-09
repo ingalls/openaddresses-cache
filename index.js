@@ -42,7 +42,7 @@ if (sourceDir.indexOf(".json") != -1) {
         singleSource = dir[dir.length-1];
 
     sourceDir = sourceDir.replace(singleSource,"");
-    
+
     sources.push(singleSource);
 } else {
     //Catch missing /
@@ -66,19 +66,19 @@ downloadSource(sourceIndex);
 
 //Download Each Source
 function downloadSource(index) {
-  
+
     if (index >= sources.length) {
         winston.info("Complete!");
         process.exit(0);
     }
-    
+
     var source = sources[index];
-    
+
     this.sourceName = sources[index];
     this.source = sourceDir + source;
 
     winston.info("---" + this.sourceName + "---");
-    
+
     parsed = JSON.parse(fs.readFileSync(sourceDir + source, 'utf8'));
 
     if (!parsed.data || parsed.skip === true) {
@@ -137,14 +137,14 @@ function downloadSource(index) {
             if (err) {
                 winston.info("   Unable to Stream Data - Skipping");
                 downloadSource(++sourceIndex);
-            } else { 
+            } else {
 
                 if (!argv.silent) showProgress(stream, parsed.type);
 
                 var write = fs.createWriteStream(output);
 
                 write.on('close', function() {
-                    if (retry === 0) 
+                    if (retry === 0)
                         checkHash();
                 });
 
@@ -175,7 +175,7 @@ function showProgress(stream, type) {
         stream.on('response', function(res) {
             var len = parseInt(res.headers['content-length'], 10);
 
-            if (len) {         
+            if (len) {
                 bar = new ProgressBar('   downloading [:bar] :percent :etas', {
                     complete: '=',
                     incomplete: '-',
@@ -217,7 +217,7 @@ function checkHash() {
     fd.on('end', function() {
         hash.end();
         var md5Hash = hash.read();
-        
+
         if (parsed.fingerprint != md5Hash)
           updateCache(md5Hash);
         else {
@@ -238,10 +238,10 @@ function updateCache(md5Hash) {
     parsed.fingerprint = md5Hash;
     parsed.version = time().format('YYYYMMDD');
     parsed.cache = "http://s3.amazonaws.com/openaddresses/" + parsed.version + "/" + outputName;
-    
+
     winston.info("   Updating s3 with " + outputName);
-    
-   var s3 = new AWS.S3.Client(),
+
+   var s3 = new AWS.S3(),
        versioned = 'openaddresses/' + parsed.version;
 
     s3.headBucket({Bucket:versioned},function(err, data) {
@@ -250,11 +250,11 @@ function updateCache(md5Hash) {
                 if (err) throw new Error("Could not create bucket");
             });
         }
-        
+
         var Uploader = require('s3-streaming-upload').Uploader,
             upload = null,
             stream = fs.createReadStream(output);
-        
+
         upload = new Uploader({
             accessKey:  process.env.AWS_ACCESS_KEY_ID,
             secretKey:  process.env.AWS_SECRET_ACCESS_KEY,
@@ -275,6 +275,6 @@ function updateCache(md5Hash) {
         upload.on('failed', function (err) {
             console.log('upload failed with error', err);
             downloadSource(++sourceIndex);
-        }); 
+        });
     });
 }
