@@ -16,7 +16,8 @@ winston.add(winston.transports.File, { filename: './logger.log' });
 
 //Command Line Args
 var sourceDir = argv._[0],
-    cacheDir = argv._[1];
+    cacheDir = argv._[1],
+    bucketName = (argv._.length == 3 ? argv._[2] : 'openaddresses');
 
 var output = "",
     outputName = "",
@@ -27,8 +28,8 @@ var output = "",
     retry = 0;
 
 if (!sourceDir || !cacheDir) {
-    console.log('usage: openaddresses-cache <path-to-sources> <path-to-cache>');
-    console.log('       openaddresses-cache  <single source>  <path-to-cache>');
+    console.log('usage: openaddresses-cache <path-to-sources> <path-to-cache> [<bucket name>]');
+    console.log('       openaddresses-cache  <single source>  <path-to-cache> [<bucket name>]');
     process.exit(0);
 }
 
@@ -237,12 +238,12 @@ function updateManifest() {
 function updateCache(md5Hash) {
     parsed.fingerprint = md5Hash;
     parsed.version = time().format('YYYYMMDD');
-    parsed.cache = "http://s3.amazonaws.com/openaddresses/" + parsed.version + "/" + outputName;
+    parsed.cache = "http://s3.amazonaws.com/" + bucketName + "/" + parsed.version + "/" + outputName;
 
     winston.info("   Updating s3 with " + outputName);
 
    var s3 = new AWS.S3(),
-       versioned = 'openaddresses/' + parsed.version;
+       versioned = bucketName + '/' + parsed.version;
 
     s3.headBucket({Bucket:versioned},function(err, data) {
         if (err) {
@@ -258,7 +259,7 @@ function updateCache(md5Hash) {
         upload = new Uploader({
             accessKey:  process.env.AWS_ACCESS_KEY_ID,
             secretKey:  process.env.AWS_SECRET_ACCESS_KEY,
-            bucket:     "openaddresses/" + parsed.version,
+            bucket:     bucketName + "/" + parsed.version,
             objectName: outputName,
             stream:     stream,
             objectParams: {
