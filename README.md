@@ -2,6 +2,10 @@
 
 Updates the openaddresses cache in a remote S3 bucket.
 
+Always downloads original source data. Will not attempt to modify bucket
+contents if the `cache` and MD5 `fingerprint` values are present and correct
+in a source file.
+
 ## usage
 
     node index.js <source directory> <working directory> [<bucket name>]
