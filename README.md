@@ -1,12 +1,15 @@
 # openaddresses-cache
 
-Updates the openaddresses cache. This tool is currently specific to the official openaddresses s3 bucket and therefore can only be updated 
-by those who have access to both the access and secret keys.
+Updates the openaddresses cache in a remote S3 bucket.
+
+Always downloads original source data. Will not attempt to modify bucket
+contents if the `cache` and MD5 `fingerprint` values are present and correct
+in a source file.
 
 ## usage
 
-    node index.js <source directory> <working directory>
-    node index.js <source> <working directory>
+    node index.js <source directory> <working directory> [<bucket name>]
+    node index.js <source> <working directory> [<bucket name>]
     
 Where
 
@@ -14,7 +17,9 @@ Where
 
 `<source directory>` contains a complete or partial list of sources from the openaddress project. (Note, if skip = true, then the cache will skip updating these files.
 
-`<working directory>` is an *empty* directory where the files will be downloaded to and then checked against the s3 cache for updats.
+`<working directory>` is an *empty* directory where the files will be downloaded to and then checked against the s3 cache for updates.
+
+`<bucket name>` is an S3 bucket to which you have write permissions.
 
 ## AWS
 
