@@ -1,6 +1,6 @@
 # openaddresses-cache
 
-Updates the openaddresses cache in a remote S3 bucket.
+[DEPRECATED] Updates the openaddresses cache in a remote S3 bucket.
 
 Always downloads original source data. Will not attempt to modify bucket
 contents if the `cache` and MD5 `fingerprint` values are present and correct
